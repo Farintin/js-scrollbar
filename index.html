@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>js scrollbar</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+        .container {
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .container > .wrapper .box {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container > .wrapper .box p {
+            font-size: 50vh;
+            color: rgba(255, 255, 255, .93);
+        }
+        
+        .container .scrollbar {
+            width: 17px;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            right: 0;
+            background-color: #eee;
+            box-sizing: border-box;
+            padding: 0px;
+        }
+        .container .scrollbar > .wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .container .scrollbar > .wrapper .thumb {
+            width: 100%;
+            height: 0;
+            position: absolute;
+            top: 0px;
+            background-color: #bbb;
+        }
+        .container .scrollbar > .wrapper .thumb:hover {
+            background-color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="wrapper">
+            <div class="box" style="background-color: red;">
+                <p>1</p>
+            </div>
+            <div class="box" style="background-color: green;">
+                <p>2</p>
+            </div>
+            <div class="box" style="background-color: yellow;">
+                <p>3</p>
+            </div>
+            <div class="box" style="background-color: purple;">
+                <p>4</p>
+            </div>
+            <div class="box" style="background-color: blue;">
+                <p>5</p>
+            </div>
+            <div class="box" style="background-color: gold;">
+                <p>6</p>
+            </div>
+            <div class="box" style="background-color: pink;">
+                <p>7</p>
+            </div>
+            <div class="box" style="background-color: lemonchiffon;">
+                <p>8</p>
+            </div>
+            <div class="box" style="background-color: orange;">
+                <p>9</p>
+            </div>
+            <div class="box" style="background-color: aqua;">
+                <p>10</p>
+            </div>
+        </div>
+
+        <div class="scrollbar">
+            <div class="wrapper">
+                <div 
+                    class="thumb"
+                >
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        let targetEl = document.querySelector('.container')
+        let targetContent = targetEl.querySelector('.wrapper')
+        let scrollbarEl = targetEl.querySelector('.scrollbar')
+        let scrollThumbEl = scrollbarEl.querySelector('.thumb')
+
+        let targetW
+        let targetH
+        let targetContentH
+        let targetScrollRatio
+        let scrollbarH
+        // let scrollbarInnerH
+        let scrollThumbH
+        let scrollbarScrollH
+        let targetContentScrollH
+        function setDimensions() {
+            targetW = targetEl.clientWidth
+            targetH = targetEl.clientHeight
+            targetContentH = targetContent.clientHeight
+            targetScrollRatio = targetH / targetContentH
+            scrollbarH = scrollbarEl.querySelector('.wrapper').offsetHeight
+            console.log(scrollbarH);
+            scrollThumbH = targetScrollRatio * scrollbarH
+            scrollThumbEl.style.height = `${scrollThumbH}px`
+            scrollbarScrollH = scrollbarH - scrollThumbH
+            targetContentScrollH = targetContentH - targetH   
+        }
+        setDimensions()
+
+        // variables and states
+        let scrollMousedown = false
+        let my
+        let thumbY = 0
+        let dir = 0
+        let incrementScrollIntervalId = 0
+        let dragScrollIntervalId = 0
+        let startIncrementScrollTimeoutId = 0
+        let thumbReachedMouse = false
+        let thumbAtEdge = false
+        let hyperScrollMode = false
+        let thumbMy = scrollThumbH / 2
+        let thumbFocus = false
+        let scrollbarMouseMove = false
+        
+        // Event listeners
+        scrollbarEl.addEventListener("mousedown", mouseDownHandler)
+        scrollbarEl.addEventListener("mousemove", function (e) {
+            scrollbarMouseMove = true
+        })
+        scrollbarEl.addEventListener("mouseleave", function (e) {
+            scrollbarMouseMove = false
+        })
+        scrollThumbEl.addEventListener("mousedown", function (e) {
+            thumbFocus = true
+        })
+        scrollThumbEl.addEventListener("dragstart", function (e) {
+            e.preventDefault()
+        })
+        targetEl.addEventListener("mousemove", mouseMoveHandler)
+        window.addEventListener("mouseup", mouseUpHandler)
+        window.addEventListener("resize", function () {
+            setDimensions()
+        })
+
+
+        const vy0 = Math.round(scrollThumbH * .135)
+        let vy = vy0
+        function incrementScroll() {
+            if (dir === 1) {// if direction down while animating scrolls increment
+                if (thumbY + scrollThumbH < my) {// thumb still above height of mouse event
+                    thumbY = scrollThumbEl.offsetTop + vy
+                } else {
+                    vy = vy0
+                    thumbReachedMouse = true
+                    clearInterval(incrementScrollIntervalId)
+                }
+
+                if (thumbY + scrollThumbH > scrollbarH - (scrollThumbH * .1)) {
+                    thumbY = scrollbarScrollH
+                    clearInterval(incrementScrollIntervalId)
+                    dir = 0
+                    thumbAtEdge = true
+                } else {
+                    thumbAtEdge = false
+                }
+            } else if (dir === -1) {// if direction up while animating scrolls increment
+                if (my < thumbY) {// thumb still above height of mouse event
+                    thumbY = scrollThumbEl.offsetTop - vy
+                } else {
+                    vy = vy0
+                    thumbReachedMouse = true
+                    clearInterval(incrementScrollIntervalId)
+                }
+
+                if (thumbY < 0 + (scrollThumbH * .1)) {
+                    thumbY = 0
+                    clearInterval(incrementScrollIntervalId)
+                    dir = 0
+                    thumbAtEdge = true
+                } else {
+                    thumbAtEdge = false
+                }
+            }
+
+            scrollThumbEl.style.top = `${thumbY}px`
+            targetEl.scrollTop = (targetContentScrollH) * (thumbY/(scrollbarScrollH))
+            
+            if (dir === 0) {
+                vy = vy0
+                clearInterval(incrementScrollIntervalId)
+            } else {
+                vy = Math.round(vy * 1.05)
+            }
+        }
+        function dragScroll() {
+            clearInterval(incrementScrollIntervalId)
+            const thumbOffsetTop = scrollThumbEl.offsetTop
+
+            if (my < thumbOffsetTop + scrollThumbH && my > thumbOffsetTop) {
+                clearInterval(dragScrollIntervalId)
+            } else {
+                if (dir === 1) {// if direction down while animating scrolls increment
+                    if (thumbY + scrollThumbH < my) {// thumb still above height of mouse event
+                        thumbY = thumbOffsetTop + Math.round(scrollThumbH * .18)
+                    } else {
+                        clearInterval(dragScrollIntervalId)
+                    }
+
+                    if (thumbY + scrollThumbH > scrollbarH - (scrollThumbH * .1)) {
+                        thumbY = scrollbarScrollH
+                        clearInterval(dragScrollIntervalId)
+                        dir = 0
+                        thumbAtEdge = true
+                    } else {
+                        thumbAtEdge = false
+                    }
+                } else if (dir === -1) {// if direction up while animating scrolls increment
+                    if (my < thumbY) {// thumb still above height of mouse event
+                        thumbY = thumbOffsetTop - Math.round(scrollThumbH * .18)
+                    } else {
+                        clearInterval(dragScrollIntervalId)
+                    }
+
+                    if (thumbY < 0 + (scrollThumbH * .1)) {
+                        thumbY = 0
+                        clearInterval(dragScrollIntervalId)
+                        dir = 0
+                        thumbAtEdge = true
+                    } else {
+                        thumbAtEdge = false
+                    }
+                }
+
+                if (thumbY === scrollThumbH || thumbY === 0) {
+                    // console.log('dir:', dir, '@"dragScroll"');
+                    clearInterval(dragScrollIntervalId)
+                }
+
+                scrollThumbEl.style.top = `${thumbY}px`
+                targetEl.scrollTop = (targetContentScrollH) * (thumbY/(scrollbarScrollH))
+                // console.log('movin dir:', dir, '@"dragScroll"');
+                
+                if (dir === 0) {
+                    clearInterval(dragScrollIntervalId)
+                }
+            }
+        }
+        function hyperScroll() {
+            thumbY = my - thumbMy
+
+            if (thumbY < 0) {
+                thumbY = 0
+            }
+            
+            if (thumbY + scrollThumbH > scrollbarH) {
+                thumbY = scrollbarScrollH
+            }
+
+            scrollThumbEl.style.top = `${thumbY}px`
+            targetEl.scrollTop = (targetContentScrollH) * (thumbY/(scrollbarScrollH))
+        }
+
+        // Event handlers
+        function mouseUpHandler (e) {
+            if (scrollMousedown) {
+                clearInterval(incrementScrollIntervalId)
+                clearInterval(dragScrollIntervalId)
+
+                dir = 0
+                vy = vy0
+
+                scrollMousedown = false
+                thumbReachedMouse = false
+                hyperScrollMode = false
+                thumbFocus = false
+                scrollbarMouseMove = false
+                targetEl.style.userSelect = 'auto'
+            }
+        }
+
+        function mouseMoveHandler (e) {
+            if (hyperScrollMode) {
+                if (e.clientX > targetW * .87) {
+                    my = e.clientY
+                    hyperScroll()
+                }
+            } else {
+                if (dir !== 0 && scrollbarMouseMove) {
+                    clearInterval(dragScrollIntervalId)
+                    if (!thumbReachedMouse) {
+                        thumbReachedMouse = true     
+                        clearInterval(incrementScrollIntervalId)
+                        vy = vy0
+                    }
+
+                    if (scrollMousedown && thumbReachedMouse && !thumbAtEdge) {
+                        my = e.clientY
+                        dragScrollIntervalId = setInterval(() => dragScroll(), 10)
+                    }
+                }
+            }
+        }
+
+        function mouseDownHandler (e) {
+            if (e.button === 0) {
+                clearInterval(incrementScrollIntervalId)
+                clearInterval(dragScrollIntervalId)
+                
+                scrollMousedown = true
+                my = e.clientY
+                const thumbOffsetTop = scrollThumbEl.offsetTop
+
+                if (!thumbFocus) {
+                    // console.log('thumb not focused');
+                    if (my > thumbOffsetTop + scrollThumbH) {// pos below thumb
+                        thumbY = thumbOffsetTop + Math.round(scrollThumbH * .9)
+                        dir = 1
+                    } else if (my < thumbOffsetTop) { // pos above thumb
+                        thumbY = thumbOffsetTop - Math.round(scrollThumbH * .9)
+                        dir = -1
+                    }
+
+                    if (dir === 1) {// while thumb direction is down
+                        if (thumbY + scrollThumbH > scrollbarH - (scrollThumbH * .1)) {// magnet thumb to bottom edge while very close to the bottom edge
+                            thumbY = scrollbarScrollH
+                        }
+                    } else if (dir === -1) {// while thumb direction is up
+                        if (thumbY < 0 + (scrollThumbH * .1)) {// magnet thumb to top edge while very close to the top edge
+                            thumbY = 0
+                        }
+                    }
+
+                    scrollThumbEl.style.top = `${thumbY}px`// scroll thumb to new height
+                    targetEl.scrollTop = (targetContentScrollH) * (thumbY/(scrollbarScrollH))// content to new height
+
+                    if (thumbY === scrollThumbH || thumbY === 0) {
+                        thumbAtEdge = true
+                    } else {// while thumb not at any edge
+                        thumbAtEdge = false
+                        startIncrementScrollTimeoutId = setTimeout(() => {
+                            incrementScrollIntervalId = setInterval(incrementScroll, 8)
+                            clearTimeout(startIncrementScrollTimeoutId)
+                        }, 280);
+                    }
+                } else {
+                    // console.log('thumb focused');
+                    hyperScrollMode = true
+                    thumbMy = e.offsetY
+                }
+            
+                targetEl.style.userSelect = 'none'
+            }
+        }
+    </script>
+</body>
+</html>
