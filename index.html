@@ -56,7 +56,7 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" >
         <div class="wrapper">
             <div class="box" style="background-color: red;">
                 <p>1</p>
@@ -95,284 +95,289 @@
                 <div 
                     class="thumb"
                 >
+                <!-- <iframe 
+                    onload="scrollbar()" 
+                    src="/"
+                    style="width: 0px;
+                        height: 0px;
+                        border: 0;"
+                ></iframe> -->
             </div>
         </div>
     </div>
 
 
     <script>
-        let targetEl = document.querySelector('.container')
-        let targetContent = targetEl.querySelector('.wrapper')
-        let scrollbarEl = targetEl.querySelector('.scrollbar')
-        let scrollThumbEl = scrollbarEl.querySelector('.thumb')
+        function scrollbar() {
+            const dom = {}
+            dom.target = document.querySelector('.container')
+            dom.targetContent = dom.target.querySelector('.wrapper')
+            dom.scrollbar = dom.target.querySelector('.scrollbar')
+            dom.scrollThumb = dom.scrollbar.querySelector('.thumb')
 
-        let targetW
-        let targetH
-        let targetContentH
-        let targetScrollRatio
-        let scrollbarH
-        // let scrollbarInnerH
-        let scrollThumbH
-        let scrollbarScrollH
-        let targetContentScrollH
-        function setDimensions() {
-            targetW = targetEl.clientWidth
-            targetH = targetEl.clientHeight
-            targetContentH = targetContent.clientHeight
-            targetScrollRatio = targetH / targetContentH
-            scrollbarH = scrollbarEl.querySelector('.wrapper').offsetHeight
-            console.log(scrollbarH);
-            scrollThumbH = targetScrollRatio * scrollbarH
-            scrollThumbEl.style.height = `${scrollThumbH}px`
-            scrollbarScrollH = scrollbarH - scrollThumbH
-            targetContentScrollH = targetContentH - targetH   
-        }
-        setDimensions()
-
-        // variables and states
-        let scrollMousedown = false
-        let my
-        let thumbY = 0
-        let dir = 0
-        let incrementScrollIntervalId = 0
-        let dragScrollIntervalId = 0
-        let startIncrementScrollTimeoutId = 0
-        let thumbReachedMouse = false
-        let thumbAtEdge = false
-        let hyperScrollMode = false
-        let thumbMy = scrollThumbH / 2
-        let thumbFocus = false
-        let scrollbarMouseMove = false
-        
-        // Event listeners
-        scrollbarEl.addEventListener("mousedown", mouseDownHandler)
-        scrollbarEl.addEventListener("mousemove", function (e) {
-            scrollbarMouseMove = true
-        })
-        scrollbarEl.addEventListener("mouseleave", function (e) {
-            scrollbarMouseMove = false
-        })
-        scrollThumbEl.addEventListener("mousedown", function (e) {
-            thumbFocus = true
-        })
-        scrollThumbEl.addEventListener("dragstart", function (e) {
-            e.preventDefault()
-        })
-        targetEl.addEventListener("mousemove", mouseMoveHandler)
-        window.addEventListener("mouseup", mouseUpHandler)
-        window.addEventListener("resize", function () {
+            const dim = {}
+            function setDimensions() {
+                dim.targetW = dom.target.clientWidth
+                dim.targetH = dom.target.clientHeight
+                dim.targetContentH = dom.targetContent.clientHeight
+                dim.targetScrollRatio = dim.targetH / dim.targetContentH
+                dim.scrollbarH = dom.scrollbar.querySelector('.wrapper').offsetHeight
+                dim.scrollThumbH = dim.targetScrollRatio * dim.scrollbarH
+                dom.scrollThumb.style.height = `${dim.scrollThumbH}px`
+                dim.scrollbarScrollH = dim.scrollbarH - dim.scrollThumbH
+                dim.targetContentScrollH = dim.targetContentH - dim.targetH  
+            }
             setDimensions()
-        })
 
-
-        const vy0 = Math.round(scrollThumbH * .135)
-        let vy = vy0
-        function incrementScroll() {
-            if (dir === 1) {// if direction down while animating scrolls increment
-                if (thumbY + scrollThumbH < my) {// thumb still above height of mouse event
-                    thumbY = scrollThumbEl.offsetTop + vy
-                } else {
-                    vy = vy0
-                    thumbReachedMouse = true
-                    clearInterval(incrementScrollIntervalId)
-                }
-
-                if (thumbY + scrollThumbH > scrollbarH - (scrollThumbH * .1)) {
-                    thumbY = scrollbarScrollH
-                    clearInterval(incrementScrollIntervalId)
-                    dir = 0
-                    thumbAtEdge = true
-                } else {
-                    thumbAtEdge = false
-                }
-            } else if (dir === -1) {// if direction up while animating scrolls increment
-                if (my < thumbY) {// thumb still above height of mouse event
-                    thumbY = scrollThumbEl.offsetTop - vy
-                } else {
-                    vy = vy0
-                    thumbReachedMouse = true
-                    clearInterval(incrementScrollIntervalId)
-                }
-
-                if (thumbY < 0 + (scrollThumbH * .1)) {
-                    thumbY = 0
-                    clearInterval(incrementScrollIntervalId)
-                    dir = 0
-                    thumbAtEdge = true
-                } else {
-                    thumbAtEdge = false
-                }
-            }
-
-            scrollThumbEl.style.top = `${thumbY}px`
-            targetEl.scrollTop = (targetContentScrollH) * (thumbY/(scrollbarScrollH))
-            
-            if (dir === 0) {
-                vy = vy0
-                clearInterval(incrementScrollIntervalId)
-            } else {
-                vy = Math.round(vy * 1.05)
-            }
-        }
-        function dragScroll() {
-            clearInterval(incrementScrollIntervalId)
-            const thumbOffsetTop = scrollThumbEl.offsetTop
-
-            if (my < thumbOffsetTop + scrollThumbH && my > thumbOffsetTop) {
-                clearInterval(dragScrollIntervalId)
-            } else {
-                if (dir === 1) {// if direction down while animating scrolls increment
-                    if (thumbY + scrollThumbH < my) {// thumb still above height of mouse event
-                        thumbY = thumbOffsetTop + Math.round(scrollThumbH * .18)
-                    } else {
-                        clearInterval(dragScrollIntervalId)
-                    }
-
-                    if (thumbY + scrollThumbH > scrollbarH - (scrollThumbH * .1)) {
-                        thumbY = scrollbarScrollH
-                        clearInterval(dragScrollIntervalId)
-                        dir = 0
-                        thumbAtEdge = true
-                    } else {
-                        thumbAtEdge = false
-                    }
-                } else if (dir === -1) {// if direction up while animating scrolls increment
-                    if (my < thumbY) {// thumb still above height of mouse event
-                        thumbY = thumbOffsetTop - Math.round(scrollThumbH * .18)
-                    } else {
-                        clearInterval(dragScrollIntervalId)
-                    }
-
-                    if (thumbY < 0 + (scrollThumbH * .1)) {
-                        thumbY = 0
-                        clearInterval(dragScrollIntervalId)
-                        dir = 0
-                        thumbAtEdge = true
-                    } else {
-                        thumbAtEdge = false
-                    }
-                }
-
-                if (thumbY === scrollThumbH || thumbY === 0) {
-                    // console.log('dir:', dir, '@"dragScroll"');
-                    clearInterval(dragScrollIntervalId)
-                }
-
-                scrollThumbEl.style.top = `${thumbY}px`
-                targetEl.scrollTop = (targetContentScrollH) * (thumbY/(scrollbarScrollH))
-                // console.log('movin dir:', dir, '@"dragScroll"');
-                
-                if (dir === 0) {
-                    clearInterval(dragScrollIntervalId)
-                }
-            }
-        }
-        function hyperScroll() {
-            thumbY = my - thumbMy
-
-            if (thumbY < 0) {
-                thumbY = 0
+            const state = {
+                scrollMousedown: false,
+                my: undefined,
+                thumbY: 0,
+                dir: 0,
+                incrementScrollIntervalId: 0,
+                dragScrollIntervalId: 0,
+                startIncrementScrollTimeoutId: 0,
+                thumbReachedMouse: false,
+                thumbAtEdge: false,
+                hyperScrollMode: false,
+                thumbMy: dim.scrollThumbH / 2,
+                thumbFocus: false,
+                scrollbarMouseMove: false
             }
             
-            if (thumbY + scrollThumbH > scrollbarH) {
-                thumbY = scrollbarScrollH
-            }
-
-            scrollThumbEl.style.top = `${thumbY}px`
-            targetEl.scrollTop = (targetContentScrollH) * (thumbY/(scrollbarScrollH))
-        }
-
-        // Event handlers
-        function mouseUpHandler (e) {
-            if (scrollMousedown) {
-                clearInterval(incrementScrollIntervalId)
-                clearInterval(dragScrollIntervalId)
-
-                dir = 0
-                vy = vy0
-
-                scrollMousedown = false
-                thumbReachedMouse = false
-                hyperScrollMode = false
-                thumbFocus = false
-                scrollbarMouseMove = false
-                targetEl.style.userSelect = 'auto'
-            }
-        }
-
-        function mouseMoveHandler (e) {
-            if (hyperScrollMode) {
-                if (e.clientX > targetW * .87) {
-                    my = e.clientY
-                    hyperScroll()
-                }
-            } else {
-                if (dir !== 0 && scrollbarMouseMove) {
-                    clearInterval(dragScrollIntervalId)
-                    if (!thumbReachedMouse) {
-                        thumbReachedMouse = true     
-                        clearInterval(incrementScrollIntervalId)
-                        vy = vy0
+            
+            const incrementScroll = () => {
+                if (state.dir === 1) {// if direction down while animating scrolls increment
+                    if (state.thumbY + dim.scrollThumbH < state.my) {// thumb still above height of mouse event
+                        state.thumbY = dom.scrollThumb.offsetTop + state.incrementScrollVy
+                    } else {
+                        state.incrementScrollVy = state.incrementScrollVy0
+                        state.thumbReachedMouse = true
+                        clearInterval(state.incrementScrollIntervalId)
                     }
 
-                    if (scrollMousedown && thumbReachedMouse && !thumbAtEdge) {
-                        my = e.clientY
-                        dragScrollIntervalId = setInterval(() => dragScroll(), 10)
+                    if (state.thumbY + dim.scrollThumbH > dim.scrollbarH - (dim.scrollThumbH * .1)) {
+                        state.thumbY = dim.scrollbarScrollH
+                        clearInterval(state.incrementScrollIntervalId)
+                        state.dir = 0
+                        state.thumbAtEdge = true
+                    } else {
+                        state.thumbAtEdge = false
+                    }
+                } else if (state.dir === -1) {// if direction up while animating scrolls increment
+                    if (state.my < state.thumbY) {// thumb still above height of mouse event
+                        state.thumbY = dom.scrollThumb.offsetTop - state.incrementScrollVy
+                    } else {
+                        state.incrementScrollVy = state.incrementScrollVy0
+                        state.thumbReachedMouse = true
+                        clearInterval(state.incrementScrollIntervalId)
+                    }
+
+                    if (state.thumbY < 0 + (dim.scrollThumbH * .1)) {
+                        state.thumbY = 0
+                        clearInterval(state.incrementScrollIntervalId)
+                        state.dir = 0
+                        state.thumbAtEdge = true
+                    } else {
+                        state.thumbAtEdge = false
                     }
                 }
-            }
-        }
 
-        function mouseDownHandler (e) {
-            if (e.button === 0) {
-                clearInterval(incrementScrollIntervalId)
-                clearInterval(dragScrollIntervalId)
+                dom.scrollThumb.style.top = `${state.thumbY}px`
+                dom.target.scrollTop = (dim.targetContentScrollH) * (state.thumbY/(dim.scrollbarScrollH))
                 
-                scrollMousedown = true
-                my = e.clientY
-                const thumbOffsetTop = scrollThumbEl.offsetTop
+                if (state.dir === 0) {
+                    state.incrementScrollVy = state.incrementScrollVy0
+                    clearInterval(state.incrementScrollIntervalId)
+                } else {
+                    state.incrementScrollVy = Math.round(state.incrementScrollVy * 1.05)
+                }
+            }
+            const dragScroll = () => {
+                clearInterval(state.incrementScrollIntervalId)
+                const thumbOffsetTop = dom.scrollThumb.offsetTop
 
-                if (!thumbFocus) {
-                    // console.log('thumb not focused');
-                    if (my > thumbOffsetTop + scrollThumbH) {// pos below thumb
-                        thumbY = thumbOffsetTop + Math.round(scrollThumbH * .9)
-                        dir = 1
-                    } else if (my < thumbOffsetTop) { // pos above thumb
-                        thumbY = thumbOffsetTop - Math.round(scrollThumbH * .9)
-                        dir = -1
-                    }
-
-                    if (dir === 1) {// while thumb direction is down
-                        if (thumbY + scrollThumbH > scrollbarH - (scrollThumbH * .1)) {// magnet thumb to bottom edge while very close to the bottom edge
-                            thumbY = scrollbarScrollH
+                if (state.my < thumbOffsetTop + dim.scrollThumbH && state.my > thumbOffsetTop) {
+                    clearInterval(state.dragScrollIntervalId)
+                } else {
+                    if (state.dir === 1) {// if direction down while animating scrolls increment
+                        if (state.thumbY + dim.scrollThumbH < state.my) {// thumb still above height of mouse event
+                            state.thumbY = thumbOffsetTop + Math.round(dim.scrollThumbH * .18)
+                        } else {
+                            clearInterval(state.dragScrollIntervalId)
                         }
-                    } else if (dir === -1) {// while thumb direction is up
-                        if (thumbY < 0 + (scrollThumbH * .1)) {// magnet thumb to top edge while very close to the top edge
-                            thumbY = 0
+
+                        if (state.thumbY + dim.scrollThumbH > dim.scrollbarH - (dim.scrollThumbH * .1)) {
+                            state.thumbY = dim.scrollbarScrollH
+                            clearInterval(state.dragScrollIntervalId)
+                            state.dir = 0
+                            state.thumbAtEdge = true
+                        } else {
+                            state.thumbAtEdge = false
+                        }
+                    } else if (state.dir === -1) {// if direction up while animating scrolls increment
+                        if (state.my < state.thumbY) {// thumb still above height of mouse event
+                            state.thumbY = thumbOffsetTop - Math.round(dim.scrollThumbH * .18)
+                        } else {
+                            clearInterval(state.dragScrollIntervalId)
+                        }
+
+                        if (state.thumbY < 0 + (dim.scrollThumbH * .1)) {
+                            state.thumbY = 0
+                            clearInterval(state.dragScrollIntervalId)
+                            state.dir = 0
+                            state.thumbAtEdge = true
+                        } else {
+                            state.thumbAtEdge = false
                         }
                     }
 
-                    scrollThumbEl.style.top = `${thumbY}px`// scroll thumb to new height
-                    targetEl.scrollTop = (targetContentScrollH) * (thumbY/(scrollbarScrollH))// content to new height
+                    if (state.thumbY === dim.scrollThumbH || state.thumbY === 0) {
+                        // console.log('dir:', dir, '@"dragScroll"');
+                        clearInterval(state.dragScrollIntervalId)
+                    }
 
-                    if (thumbY === scrollThumbH || thumbY === 0) {
-                        thumbAtEdge = true
-                    } else {// while thumb not at any edge
-                        thumbAtEdge = false
-                        startIncrementScrollTimeoutId = setTimeout(() => {
-                            incrementScrollIntervalId = setInterval(incrementScroll, 8)
-                            clearTimeout(startIncrementScrollTimeoutId)
-                        }, 280);
+                    dom.scrollThumb.style.top = `${state.thumbY}px`
+                    dom.target.scrollTop = (dim.targetContentScrollH) * (state.thumbY/(dim.scrollbarScrollH))
+                    // console.log('movin dir:', dir, '@"dragScroll"');
+                    
+                    if (state.dir === 0) {
+                        clearInterval(state.dragScrollIntervalId)
+                    }
+                }
+            }
+            const hyperScroll = () => {
+                state.thumbY = state.my - state.thumbMy
+
+                if (state.thumbY < 0) {
+                    state.thumbY = 0
+                }
+                
+                if (state.thumbY + dim.scrollThumbH > dim.scrollbarH) {
+                    state.thumbY = dim.scrollbarScrollH
+                }
+
+                dom.scrollThumb.style.top = `${state.thumbY}px`
+                dom.target.scrollTop = (dim.targetContentScrollH) * (state.thumbY/(dim.scrollbarScrollH))
+            }
+
+            // Event handlers
+            const mouseUpHandler = e => {
+                if (state.scrollMousedown) {
+                    clearInterval(state.incrementScrollIntervalId)
+                    clearInterval(state.dragScrollIntervalId)
+
+                    state.dir = 0
+                    state.incrementScrollVy = state.incrementScrollVy0
+
+                    state.scrollMousedown = false
+                    state.thumbReachedMouse = false
+                    state.hyperScrollMode = false
+                    state.thumbFocus = false
+                    state.scrollbarMouseMove = false
+                    dom.target.style.userSelect = 'auto'
+                }
+            }
+
+            const mouseMoveHandler = e => {
+                if (state.hyperScrollMode) {
+                    if (e.clientX > dim.targetW * .87) {
+                        state.my = e.clientY
+                        hyperScroll()
                     }
                 } else {
-                    // console.log('thumb focused');
-                    hyperScrollMode = true
-                    thumbMy = e.offsetY
+                    if (state.dir !== 0 && state.scrollbarMouseMove) {
+                        clearInterval(state.dragScrollIntervalId)
+                        if (!state.thumbReachedMouse) {
+                            state.thumbReachedMouse = true     
+                            clearInterval(state.incrementScrollIntervalId)
+                            state.incrementScrollVy = state.incrementScrollVy0
+                        }
+
+                        if (state.scrollMousedown && state.thumbReachedMouse && !state.thumbAtEdge) {
+                            state.my = e.clientY
+                            state.dragScrollIntervalId = setInterval(() => dragScroll(), 10)
+                        }
+                    }
                 }
-            
-                targetEl.style.userSelect = 'none'
             }
+
+            const mouseDownHandler = e => {
+                if (e.button === 0) {
+                    clearInterval(state.incrementScrollIntervalId)
+                    clearInterval(state.dragScrollIntervalId)
+                    
+                    state.scrollMousedown = true
+                    state.my = e.clientY
+                    const thumbOffsetTop = dom.scrollThumb.offsetTop
+
+                    if (!state.thumbFocus) {
+                        // console.log('thumb not focused');
+                        if (state.my > thumbOffsetTop + dim.scrollThumbH) {// pos below thumb
+                            state.thumbY = thumbOffsetTop + Math.round(dim.scrollThumbH * .9)
+                            state.dir = 1
+                        } else if (state.my < thumbOffsetTop) { // pos above thumb
+                            state.thumbY = thumbOffsetTop - Math.round(dim.scrollThumbH * .9)
+                            state.dir = -1
+                        }
+
+                        if (state.dir === 1) {// while thumb direction is down
+                            if (state.thumbY + dim.scrollThumbH > dim.scrollbarH - (dim.scrollThumbH * .1)) {// magnet thumb to bottom edge while very close to the bottom edge
+                                state.thumbY = dim.scrollbarScrollH
+                            }
+                        } else if (state.dir === -1) {// while thumb direction is up
+                            if (state.thumbY < 0 + (dim.scrollThumbH * .1)) {// magnet thumb to top edge while very close to the top edge
+                                state.thumbY = 0
+                            }
+                        }
+
+                        dom.scrollThumb.style.top = `${state.thumbY}px`// scroll thumb to new height
+                        dom.target.scrollTop = (dim.targetContentScrollH) * (state.thumbY/(dim.scrollbarScrollH))// content to new height
+
+                        if (state.thumbY === dim.scrollThumbH || state.thumbY === 0) {
+                            state.thumbAtEdge = true
+                        } else {// while thumb not at any edge
+                            state.thumbAtEdge = false
+                            state.startIncrementScrollTimeoutId = setTimeout(() => {
+                                state.incrementScrollIntervalId = setInterval(incrementScroll, 8)
+                                clearTimeout(state.startIncrementScrollTimeoutId)
+                            }, 280);
+                        }
+                    } else {
+                        // console.log('thumb focused');
+                        state.hyperScrollMode = true
+                        state.thumbMy = e.offsetY
+                    }
+                
+                    dom.target.style.userSelect = 'none'
+                }
+            }
+        
+            // Event listeners
+            dom.scrollbar.addEventListener("mousedown", mouseDownHandler)
+            dom.scrollbar.addEventListener("mousemove", e => {
+                state.scrollbarMouseMove = true
+            })
+            dom.scrollbar.addEventListener("mouseleave", e => {
+                state.scrollbarMouseMove = false
+            })
+            dom.scrollThumb.addEventListener("mousedown", e => {
+                state.thumbFocus = true
+            })
+            dom.scrollThumb.addEventListener("dragstart", e => {
+                e.preventDefault()
+            })
+            dom.target.addEventListener("mousemove", mouseMoveHandler)
+            window.addEventListener("mouseup", mouseUpHandler)
+            window.addEventListener("resize", () => {
+                setDimensions()
+            })
+
+
+            state.incrementScrollVy0 = Math.round(dim.scrollThumbH * .135)
+            state.incrementScrollVy = state.incrementScrollVy0
         }
+        scrollbar()
     </script>
 </body>
 </html>
